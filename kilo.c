@@ -1,5 +1,6 @@
 /*** includes ***/
 
+#include <errno.h>
 #include <unistd.h>
 #include <termios.h>
 #include <stdlib.h>
@@ -17,12 +18,13 @@ struct termios orig_termios;
 
 /*** terminal ***/
 
-//error handler
+//Error handler.
 void die(const char *s){
   perror(s);
   exit(1);
 }
 
+//Disables raw mode on exit to reset all flags modified
 void disableRawMode() {
 
   //after the editor is done we reset the attributes.
@@ -30,14 +32,11 @@ void disableRawMode() {
     die("tcsetattr");
 }
 
+//Changes terminal attributes to disable cooked mode.
 void enableRawMode() {
 
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) die("tcgetattr");
+  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr");
 
-
-  //get terminal attributes.
-  tcgetattr(STDIN_FILENO, &orig_termios);
-  
   //reset attributes when exit is proccessed.
   atexit(disableRawMode);
 
@@ -45,10 +44,10 @@ void enableRawMode() {
 
   //Take bitwise-NOT of ECHO and perform bitwise-AND on the local
   //flags to disable ECHO.
-  raw.c_iflag &= ~(IXON | ICRNL | BRKINT | INPCK | ISTRIP);
+  raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
   raw.c_oflag &= ~(OPOST);
-  raw.c_cflag &= ~(CS8);
-  raw.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
+  raw.c_cflag |= (CS8);
+  raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
 
   //set control character values.
   raw.c_cc[VMIN] = 0;
@@ -59,26 +58,43 @@ void enableRawMode() {
 
 }
 
+char editorReadKey() {
+  int nread;
+  char c;
+  while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+    if (nread == -1 && errno != EAGAIN) die ("read");
+  }
+ 
+  return c;
+}
+/*** output ***/
+
+void editorRefreshScreen() {
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+}
+
+/*** input ***/
+
+void editorProcessKeypress() {
+  char c = editorReadKey();
+
+  switch (c) {
+    case CTRL_KEY('q'):
+      exit(0);
+      break;
+  }
+}
+
 /*** init ***/
 
 int main() {
   enableRawMode();
 
-  while (1) {
-
-    char c = '\0';
-
-    if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die("read");
-
-    //if the character is a control character we just print the ASCII code
-    //else we print the ASCII code and the character.
-    if (iscntrl(c)) {
-      printf("%d\r\n", c);
-    } else {
-      printf("%d ('%c')\r\n", c, c);
-    }
-    if (c == CTRL_KEY('q')) break;
-  }
+  while (1){
+    editorRefreshScreen();
+    editorProcessKeypress();
+  } 
 
   return 0;
 }
