@@ -27,6 +27,10 @@ void enableRawMode() {
   raw.c_oflag &= ~(OPOST);
   raw.c_cflag &= ~(CS8);
   raw.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
+
+  //set control character values.
+  raw.c_cc[VMIN] = 0;
+  raw.c_cc[VTIME] = 1;
   
   //set the flags
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
@@ -36,8 +40,10 @@ void enableRawMode() {
 int main() {
   enableRawMode();
 
-  char c;
-  while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
+  while (1) {
+
+    char c = '\0';
+    read(STDIN_FILENO, &c, 1);
 
     //if the character is a control character we just print the ASCII code
     //else we print the ASCII code and the character.
@@ -46,6 +52,7 @@ int main() {
     } else {
       printf("%d ('%c')\r\n", c, c);
     }
+    if (c == 'q') break;
   }
 
   return 0;
