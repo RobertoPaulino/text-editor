@@ -1,3 +1,5 @@
+/*** includes ***/
+
 #include <unistd.h>
 #include <termios.h>
 #include <stdlib.h>
@@ -5,7 +7,11 @@
 #include <ctype.h>
 #include <stdio.h>
 
+/*** data ***/
+
 struct termios orig_termios;
+
+/*** terminal ***/
 
 //error handler
 void die(const char *s){
@@ -21,6 +27,9 @@ void disableRawMode() {
 }
 
 void enableRawMode() {
+
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) die("tcgetattr");
+
 
   //get terminal attributes.
   tcgetattr(STDIN_FILENO, &orig_termios);
@@ -42,9 +51,11 @@ void enableRawMode() {
   raw.c_cc[VTIME] = 1;
   
   //set the flags
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
 
 }
+
+/*** init ***/
 
 int main() {
   enableRawMode();
@@ -52,7 +63,8 @@ int main() {
   while (1) {
 
     char c = '\0';
-    read(STDIN_FILENO, &c, 1);
+
+    if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die("read");
 
     //if the character is a control character we just print the ASCII code
     //else we print the ASCII code and the character.
