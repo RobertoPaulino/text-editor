@@ -23,7 +23,8 @@ void enableRawMode() {
 
   //Take bitwise-NOT of ECHO and perform bitwise-AND on the local
   //flags to disable ECHO.
-  raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+  raw.c_iflag &= ~(IXON);
+  raw.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
   
   //set the flags
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
