@@ -23,7 +23,9 @@ void enableRawMode() {
 
   //Take bitwise-NOT of ECHO and perform bitwise-AND on the local
   //flags to disable ECHO.
-  raw.c_iflag &= ~(IXON | ICRNL);
+  raw.c_iflag &= ~(IXON | ICRNL | BRKINT | INPCK | ISTRIP);
+  raw.c_oflag &= ~(OPOST);
+  raw.c_cflag &= ~(CS8);
   raw.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
   
   //set the flags
@@ -40,9 +42,9 @@ int main() {
     //if the character is a control character we just print the ASCII code
     //else we print the ASCII code and the character.
     if (iscntrl(c)) {
-      printf("%d\n", c);
+      printf("%d\r\n", c);
     } else {
-      printf("%d ('%c')\n", c, c);
+      printf("%d ('%c')\r\n", c, c);
     }
   }
 
