@@ -1,14 +1,23 @@
 #include <unistd.h>
 #include <termios.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <ctype.h>
 #include <stdio.h>
 
 struct termios orig_termios;
 
+//error handler
+void die(const char *s){
+  perror(s);
+  exit(1);
+}
+
 void disableRawMode() {
+
   //after the editor is done we reset the attributes.
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
+    die("tcsetattr");
 }
 
 void enableRawMode() {
