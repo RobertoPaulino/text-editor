@@ -20,6 +20,10 @@ struct termios orig_termios;
 
 //Error handler.
 void die(const char *s){
+  //Clears screen and resets cursor on error exit.
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
   perror(s);
   exit(1);
 }
@@ -69,6 +73,7 @@ char editorReadKey() {
 }
 /*** output ***/
 
+// refreshes the screen and sets cursor to col 1 row 1
 void editorRefreshScreen() {
   write(STDOUT_FILENO, "\x1b[2J", 4);
   write(STDOUT_FILENO, "\x1b[H", 3);
@@ -81,6 +86,11 @@ void editorProcessKeypress() {
 
   switch (c) {
     case CTRL_KEY('q'):
+      
+      //Clears screen and reset cursor on exit sequence.
+      write(STDOUT_FILENO, "\x1b[2J", 4);
+      write(STDOUT_FILENO, "\x1b[H", 3);
+
       exit(0);
       break;
   }
