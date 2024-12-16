@@ -1,6 +1,6 @@
 # Prerequisites
 *.d
-executable
+kilo
 
 # Object files
 *.o
